@@ -1,0 +1,7 @@
+
+div[data-testid="stMetric"] { padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(15,23,42,0.08); }
+div[data-testid="stMetric"] * { font-family: Inter, system-ui, -apple-system, Segoe UI, Arial !important; }
+section.main > div { padding-top: 1rem; }
+.block-container { max-width: 1200px; }
+.chat-bubble { border: 1px solid rgba(15,23,42,0.08); border-radius: 16px; padding: 12px 14px; background: rgba(248,250,252,0.8); }
+.badge { display:inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(15,23,42,0.12); background: rgba(241,245,249,0.9); }

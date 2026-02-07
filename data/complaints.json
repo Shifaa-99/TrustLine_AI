@@ -1,0 +1,126 @@
+[
+  {
+    "complaint_id": "CMP-000001",
+    "order_id": "ORD-002",
+    "customer_name": "Rahaf Kanaan",
+    "phone": "0797273229",
+    "message": "my order is broken ",
+    "images": [
+      "data/complaints_images/ORD-002_Example-Output.png"
+    ],
+    "status": "new",
+    "created_at": "2026-02-03T22:04:19"
+  },
+  {
+    "complaint_id": "CMP-000002",
+    "order_id": "ORD-002",
+    "customer_name": "Rahaf Kanaan",
+    "phone": "0797273229",
+    "message": "بدي اقدم شكوى لانه طلبي وصل تالف ومكسور ",
+    "images": [
+      "data/complaints_images/ORD-002_Example-Output.png"
+    ],
+    "status": "resolved",
+    "created_at": "2026-02-03T22:39:51",
+    "assigned_to": "SHIFAA",
+    "internal_note": "",
+    "category": "damage",
+    "updated_at": "2026-02-06T23:32:22"
+  },
+  {
+    "complaint_id": "CMP-000003",
+    "order_id": "ORD-002",
+    "customer_name": "Rahaf Kanaan",
+    "phone": "0797273229",
+    "message": "تاخر الطلب لحتى وصلني , ومندوب التوصيل كان سيء",
+    "images": [],
+    "status": "new",
+    "created_at": "2026-02-03T23:23:29"
+  },
+  {
+    "complaint_id": "CMP-20260206-165100",
+    "order_id": "ORD-001",
+    "customer_name": "Rahaf Ahmad",
+    "phone": "0791234567",
+    "message": "تاخر كنتيييير وبدي اشتكي عليكم",
+    "category": "delivery_delay",
+    "status": "in_progress",
+    "images": [],
+    "internal_note": "",
+    "created_at": "2026-02-06T16:51:00",
+    "updated_at": "2026-02-06T22:44:07",
+    "assigned_to": "Shifaa"
+  },
+  {
+    "complaint_id": "CMP-20260206-183400",
+    "order_id": "ORD-005",
+    "customer_name": "Mohammed",
+    "phone": "0797926589",
+    "message": "انا بدي اقدم  شكوى انه طلبي تاخر كتيييير",
+    "category": "delivery_delay",
+    "status": "in_progress",
+    "images": [],
+    "internal_note": "",
+    "created_at": "2026-02-06T18:34:00",
+    "updated_at": "2026-02-07T00:31:15",
+    "assigned_to": ""
+  },
+  {
+    "complaint_id": "CMP-20260207-132251-12d0e8",
+    "order_id": "ORD-003",
+    "customer_name": "شفاء",
+    "phone": "0797144526",
+    "message": "بدي اقدم شكوى لانه تاخر كتيير او بدي اتواصل مع حدى بشري",
+    "category": "service",
+    "status": "new",
+    "images": [],
+    "internal_note": "",
+    "created_at": "2026-02-07T13:22:51",
+    "updated_at": null
+  },
+  {
+    "complaint_id": "CMP-20260207-133446-87dfc0",
+    "order_id": "ORD-004",
+    "customer_name": "Ali",
+    "phone": "0797144526",
+    "message": "my order is broken",
+    "category": "damage",
+    "status": "new",
+    "images": [
+      "C:\\Users\\HP\\Desktop\\Customer-Support-Agent\\data\\complaints_images\\81cf28578d7f4657856175a6f7be0802.jpeg"
+    ],
+    "internal_note": "",
+    "created_at": "2026-02-07T13:34:46",
+    "updated_at": null
+  },
+  {
+    "complaint_id": "CMP-20260207-133856-e691d3",
+    "order_id": "ORD-004",
+    "customer_name": "Ali",
+    "phone": "0797144526",
+    "message": "طلبيتي وصلت مفتوحة ومكسورة بدي اقدم الشكوى لو سمحت",
+    "category": "damage",
+    "status": "new",
+    "images": [
+      "C:\\Users\\HP\\Desktop\\Customer-Support-Agent\\data\\complaints_images\\2c02ec46785742e08f9485343ab8478d.jpeg"
+    ],
+    "internal_note": "",
+    "created_at": "2026-02-07T13:38:56",
+    "updated_at": null
+  },
+  {
+    "complaint_id": "CMP-20260207-144900-9cefd2",
+    "order_id": "ORD-004",
+    "customer_name": "Ali",
+    "phone": "0797144526",
+    "message": "yes damaged , i wanna make complain",
+    "category": "damage",
+    "status": "new",
+    "images": [
+      "C:\\Users\\HP\\Desktop\\Customer-Support-Agent\\data\\complaints_images\\cb59b8fdb42449508e20e70a1e0d37d3.jpeg"
+    ],
+    "internal_note": "",
+    "created_at": "2026-02-07T14:49:00",
+    "updated_at": null
+  }
+]
