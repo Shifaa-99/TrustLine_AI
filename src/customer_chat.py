@@ -4,7 +4,7 @@ from openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
-from src.customer_flow import CustomerSession, handle_customer_message
+from customer_flow import CustomerSession, handle_customer_message
 
 
 # ============================================================

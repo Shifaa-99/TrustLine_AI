@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 import re
 
-from src.config import ORDERS_FILE, ORDER_STATUSES, STATUS_LABELS
+from config import ORDERS_FILE, ORDER_STATUSES, STATUS_LABELS
 
 # ===============================
 # Internal helpers

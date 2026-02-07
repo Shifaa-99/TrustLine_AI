@@ -2,7 +2,7 @@ import os
 import uuid
 import streamlit as st
 from pathlib import Path
-from src.config import COMPLAINT_IMAGES_DIR
+from config import COMPLAINT_IMAGES_DIR
 
 
 def _safe_read(path: str) -> str:

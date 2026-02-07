@@ -1,7 +1,19 @@
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR / "data"
+from pathlib import Path
+
+# project root = folder اللي فوق src
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
+DATA_DIR = ROOT_DIR / "data"
+ASSETS_DIR = ROOT_DIR / "assets"
+RAG_INDEX_DIR = ROOT_DIR / "rag_index"
+
+ORDERS_FILE = DATA_DIR / "orders.json"
+COMPLAINTS_FILE = DATA_DIR / "complaints.json"
+KNOWLEDGE_FILE = DATA_DIR / "knowledge_base.txt"
+COMPLAINTS_IMAGES_DIR = DATA_DIR / "complaints_images"
+
 
 # Orders
 ORDERS_FILE = DATA_DIR / "orders.json"

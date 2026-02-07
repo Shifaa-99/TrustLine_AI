@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
-from src.auth import require_role, logout
-from src.ui import app_header, sidebar_shell
-from src.complaint_manager import list_complaints, get_complaint, update_complaint
-from src.config import ORDER_STATUSES
-from src.order_manager import (
+from auth import require_role, logout
+from ui import app_header, sidebar_shell
+from complaint_manager import list_complaints, get_complaint, update_complaint
+from config import ORDER_STATUSES
+from order_manager import (
     list_orders,
     create_order,
     update_order_status,

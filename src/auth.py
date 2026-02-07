@@ -1,5 +1,5 @@
 import streamlit as st
-from src.config import ADMIN_USERS
+from config import ADMIN_USERS
 
 ROLE_ADMIN = "admin"
 

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import os
 import uuid
 
-from src.config import COMPLAINTS_FILE
+from config import COMPLAINTS_FILE
 
 
 def _now_iso() -> str:

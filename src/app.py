@@ -9,10 +9,10 @@ from openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
-from src.auth import init_auth_state, login_ui_inline, logout
-from src.ui import app_header
-from src.customer_flow import CustomerSession, handle_customer_message
-from src.config import COMPLAINT_IMAGES_DIR
+from auth import init_auth_state, login_ui_inline, logout
+from ui import app_header
+from customer_flow import CustomerSession, handle_customer_message
+from config import COMPLAINT_IMAGES_DIR
 
 import re
 
