@@ -122,5 +122,34 @@
     "internal_note": "",
     "created_at": "2026-02-07T14:49:00",
     "updated_at": null
+  },
+  {
+    "complaint_id": "CMP-20260210-175319-660e7b",
+    "order_id": "ORD-003",
+    "customer_name": "شفاء",
+    "phone": "0797144526",
+    "message": "اه بدي اسجل شكوى انه طلبي تاخر كثييير والو اكثر من شهر ما وصلني وما حدى تواصل معي",
+    "category": "service",
+    "status": "new",
+    "images": [],
+    "internal_note": "",
+    "created_at": "2026-02-10T17:53:19",
+    "updated_at": null
+  },
+  {
+    "complaint_id": "CMP-20260210-191309-273edc",
+    "order_id": "ORD-004",
+    "customer_name": "Ali",
+    "phone": "0797144526",
+    "message": "اه عندي صورة للمنتج المكسور وبدي اضيفها",
+    "category": "damage",
+    "status": "in_progress",
+    "images": [
+      "C:\\Users\\HP\\Desktop\\Customer-Support-Agent\\data\\complaints_images\\e8c822b542114b8e8fd418ed4cc0cf84.jpg"
+    ],
+    "internal_note": "",
+    "created_at": "2026-02-10T19:13:09",
+    "updated_at": "2026-02-10T19:49:35",
+    "assigned_to": "Rahaf"
   }
 ]

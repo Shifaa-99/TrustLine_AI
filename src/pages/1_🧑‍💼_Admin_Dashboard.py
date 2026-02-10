@@ -165,7 +165,7 @@ with tab1:
                 except Exception as e:
                     st.error(str(e))
 
-    # -------- Edit Order --------
+       # -------- Edit Order --------
     if orders:
         st.markdown("#### ✏️ Edit Order")
         oid = st.selectbox("Select Order", sorted(orders.keys()), key="edit_order_select")
@@ -177,11 +177,22 @@ with tab1:
             o = None
 
         if o:
-            # Quick Status Update (only place)
+            # Track change to reset widgets safely
+            last_oid = st.session_state.get("_last_edit_oid")
+            order_changed = (last_oid != oid)
+            if order_changed:
+                st.session_state["_last_edit_oid"] = oid
+
+            # Quick Status Update
             st.markdown("**Quick Status Update**")
             c1, c2 = st.columns([3, 1])
-            new_status = c1.selectbox("Status", STATUS_OPTIONS, index=status_index(o.get("status", "received")), key="status_quick")
-            if c2.button("Update Status", key="btn_update_status"):
+            new_status = c1.selectbox(
+                "Status",
+                STATUS_OPTIONS,
+                index=status_index(o.get("status", "received")),
+                key=f"status_quick_{oid}",
+            )
+            if c2.button("Update Status", key=f"btn_update_status_{oid}"):
                 try:
                     update_order_status(oid, new_status)
                     st.success("Status updated")
@@ -191,29 +202,58 @@ with tab1:
 
             st.divider()
 
-            # Full Edit (NO status here)
+            # Full Edit
             c3, c4 = st.columns(2)
-            new_customer = c3.text_input("Customer Name", o.get("customer_name", ""), key="edit_customer")
-            new_phone = c4.text_input("Phone", o.get("phone", ""), key="edit_phone")
+            new_customer = c3.text_input(
+                "Customer Name",
+                value=o.get("customer_name", ""),
+                key=f"edit_customer_{oid}",
+            )
+            new_phone = c4.text_input(
+                "Phone",
+                value=o.get("phone", ""),
+                key=f"edit_phone_{oid}",
+            )
 
-            new_address = st.text_input("Address", o.get("delivery_address", ""), key="edit_address")
+            new_address = st.text_input(
+                "Address",
+                value=o.get("delivery_address", ""),
+                key=f"edit_address_{oid}",
+            )
 
             pm_current = (o.get("payment_method") or "cash").strip().lower()
-            pm_index = PM_OPTIONS.index(pm_current) if pm_current in PM_OPTIONS else PM_OPTIONS.index("other")
+            pm_default = pm_current if pm_current in PM_OPTIONS else "other"
+            pm_index = PM_OPTIONS.index(pm_default)
 
-            pm_choice = st.selectbox("Payment Method", PM_OPTIONS, index=pm_index, key="pm_edit")
+            pm_choice = st.selectbox(
+                "Payment Method",
+                PM_OPTIONS,
+                index=pm_index,
+                key=f"pm_edit_{oid}",
+            )
+
             pm_custom = ""
             if pm_choice == "other":
-                pm_custom = st.text_input("Other payment method", value=pm_current, key="pm_edit_other")
+                pm_custom = st.text_input(
+                    "Other payment method",
+                    value="" if pm_current in PM_OPTIONS else pm_current,
+                    key=f"pm_edit_other_{oid}",
+                )
 
             payment_method_edit = pm_custom.strip().lower() if pm_choice == "other" else pm_choice
 
+            # ✅ IMPORTANT: use a unique editor key per order
             items_df = items_to_df(o.get("items"))
-            edited_items_df = st.data_editor(items_df, num_rows="dynamic", use_container_width=True, key="items_edit")
+            edited_items_df = st.data_editor(
+                items_df,
+                num_rows="dynamic",
+                use_container_width=True,
+                key=f"items_edit_editor_{oid}",
+            )
 
             st.info(f"Estimated total: {calc_total(df_to_items(edited_items_df)):.2f}")
 
-            if st.button("Save Changes", type="primary", key="btn_save_order"):
+            if st.button("Save Changes", type="primary", key=f"btn_save_order_{oid}"):
                 try:
                     update_order(oid, {
                         "customer_name": new_customer,

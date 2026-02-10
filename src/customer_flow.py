@@ -2,10 +2,8 @@ import json
 import re
 from enum import Enum
 from typing import Optional, Dict, List, Any
-
 from complaint_manager import create_complaint_record
 from order_manager import _load_orders, find_orders_by_phone, normalize_phone
-
 
 # ============================================================
 # Conversation States (FSM)
@@ -16,8 +14,6 @@ class State(str, Enum):
     AWAITING_ORDER_ID = "awaiting_order_id"
     AWAITING_PHONE = "awaiting_phone"
     VERIFIED = "verified"
-
-
 # ============================================================
 # Session Object
 # ============================================================
@@ -32,11 +28,11 @@ class CustomerSession:
         self.language: Optional[str] = None  # "ar" or "en"
         self.chat_history: List[Dict[str, str]] = []
         self.awaiting_images: bool = False
-
-
+        self.verify_prompt_count: int = 0
         # Keep last described issue + pending images (from UI)
         self.last_issue_text: Optional[str] = None
         self.pending_image_paths: List[str] = []
+        self.awaiting_complaint_confirmation: bool = False
 
     def add_turn(self, role: str, content: str):
         if not content:
@@ -58,7 +54,6 @@ def extract_digits(text: str) -> str:
 
 def looks_like_phone(text: str) -> bool:
     d = extract_digits(text)
-    # مناسب للأردن والخليج عادة، عدّل لو بدك
     return 9 <= len(d) <= 15
 
 def looks_like_order_id(text: str) -> bool:
@@ -100,7 +95,16 @@ def is_policy_intent(text: str) -> bool:
     t = (text or "").strip().lower()
     keywords_ar = ["سياسة", "سياسات", "استرجاع", "ارجاع", "إرجاع", "استبدال", "ضمان", "خصوصية", "شروط", "توصيل", "استرداد"]
     keywords_en = ["policy", "refund", "return", "exchange", "warranty", "privacy", "terms", "delivery"]
-    return any(k in t for k in keywords_ar + keywords_en)
+    # ✅ must be a specific policy question (avoid "tell me all policies")
+    has_keyword = any(k in t for k in keywords_ar + keywords_en)
+
+    too_generic = any(x in t for x in [
+        "all policies", "your policies", "policies list", "what are the policies",
+        "كل السياسات", "اعطيني السياسات", "سياساتك", "شو السياسات"
+    ])
+
+    return has_keyword and not too_generic
+
 
 def is_order_intent(text: str) -> bool:
     t = (text or "").strip().lower()
@@ -114,8 +118,18 @@ def is_order_intent(text: str) -> bool:
 
 def is_escalation_request(text: str) -> bool:
     t = (text or "").strip().lower()
-    ar = ["مدير", "مسؤول", "الإدارة", "تصعيد", "اشكي", "شكوى", "ارفع شكوى", "ارفعها", "شكيت", "بدي حد مسؤول"]
-    en = ["manager", "supervisor", "escalate", "complaint", "raise a complaint"]
+    ar = [
+    "مدير", "مسؤول", "المسؤول", "الإدارة", "تصعيد",
+    "اشكي", "شكوى", "ارفع شكوى", "ارفعها", "شكيت",
+    "بدي حد مسؤول", "بدي المسؤول", "حولني لمسؤول"
+    ]
+    en = [
+    "manager", "supervisor", "escalate",
+    "complaint", "raise a complaint",
+    "responsible", "person in charge", "someone in charge",
+    "boss", "team lead", "support lead"
+    ]
+
     return any(k in t for k in ar + en)
 
 def is_yes(text: str) -> bool:
@@ -129,6 +143,27 @@ def last_assistant_asked_escalation(session: CustomerSession) -> bool:
             return ("تصعيد" in a) or ("مسؤول" in a) or ("الإدارة" in a) or ("manager" in a) or ("escalat" in a)
     return False
 
+def is_system_probe(text: str) -> bool:
+    t = (text or "").strip().lower()
+
+    probes_ar = [
+        "برومبت", "البرومبت", "تعليماتك", "قواعدك", "كيف بتشتغل", "كيف تعمل",
+        "السيستم", "منطقك", "آلية عملك",
+        "ايش السياسات", "إيش السياسات", "شو السياسات", "السياسات اللي عندك",
+        "اعطيني السياسات", "هات السياسات", "سياساتك", "سياسة النظام", "سياسات النظام"
+    ]
+    probes_en = [
+        "prompt", "system prompt", "your prompt", "instructions", "your rules",
+        "internal rules", "how do you work", "tell me your policies", "all policies","tell me all policies"
+    ]
+
+    return any(p in t for p in probes_ar + probes_en)
+
+
+def empathy_prefix(lang: str) -> str:
+    if lang == "en":
+        return "I understand how frustrating this can be 🙏\n"
+    return "أفهم قدّيش الموقف مزعج 🙏\n"
 
 # ============================================================
 # Complaint classifiers (verified stage)
@@ -175,6 +210,21 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
 
     # Always store user message in memory
     session.add_turn("user", user_text)
+    
+
+    # 🔒 Block prompt / system probing (NO LLM)
+    if is_system_probe(user_text):
+        reply_ar = (
+            "أقدر أساعدك بالأسئلة المتعلقة بالطلبات والخدمات (مثل التوصيل، الإرجاع، الاسترجاع).\n"
+            "إذا عندك سؤال محدد عن سياسة معينة، اسألني عنها مباشرة."
+        )
+        reply_en = (
+            "I can help with customer-related questions (delivery, returns, refunds).\n"
+            "If you have a specific policy question, please ask it directly."
+        )
+        reply = reply_en if session.language == "en" else reply_ar
+        session.add_turn("assistant", reply)
+        return reply
 
     # ========================================================
     # GLOBAL: Escalation request BEFORE verification
@@ -184,8 +234,17 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
         session.last_issue_text = user_text
         session.state = State.AWAITING_ORDER_ID
 
-        reply_ar = "أكيد. عشان أسجل الشكوى بشكل صحيح، اكتب رقم الطلب (مثال: ORD-001) أو إذا ما بتعرفه اكتب رقم هاتفك."
-        reply_en = "Sure. To file your request properly, type your Order ID (e.g., ORD-001). If you don’t know it, type your phone number."
+        reply_ar = (
+            empathy_prefix("ar") +
+            "حتى أقدر أتابع الشكوى بشكل صحيح، محتاج رقم الطلب (ORD-001) "
+            "أو رقم هاتفك إذا ما بتذكر رقم الطلب."
+        )
+
+        reply_en = (
+            empathy_prefix("en") +
+            "To proceed with your complaint, I need your Order ID (ORD-001) "
+            "or your phone number if you don’t remember it."
+        )
         reply = reply_ar if session.language != "en" else reply_en
 
         session.add_turn("assistant", reply)
@@ -237,14 +296,18 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
         if session.matched_orders and user_text in session.matched_orders:
             session.order_id = user_text
             order = orders.get(session.order_id)
+
             if not order:
-                session.state = State.IDLE
+                session.state = State.AWAITING_ORDER_ID
                 session.order_id = None
+                session.order_data = None
                 session.matched_orders = []
-                
-                reply = "تمام. للتأكد من الأمان، اكتب رقم هاتفك المرتبط بالطلب."
+                session.verify_prompt_count = 0  # ✅ reset
+
+                reply = reply_en if session.language == "en" else reply_ar
+                reply = "❌ الطلب المختار غير موجود. جرّب رقم طلب آخر أو اكتب رقم هاتفك مرة ثانية."
                 if session.language == "en":
-                    reply = "Great. For security, please type the phone number linked to this order."
+                    reply = "❌ The selected order was not found. Please try another Order ID or type your phone number again."
                 session.add_turn("assistant", reply)
                 return reply
 
@@ -271,15 +334,15 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
 
         # Order id format but not found
         if looks_like_order_id(user_text) and user_text not in orders:
-            session.state = State.IDLE
+            session.state = State.AWAITING_ORDER_ID
             session.order_id = None
+            session.order_data = None
             session.matched_orders = []
-            reply = generate_llm_reply(
-                llm, State.IDLE,
-                {"verified": False, "order_exists": False, "knowledge": rag_context, "language": session.language},
-                user_text,
-                session.recent_history(10),
-            )
+
+            reply_ar = "❌ رقم الطلب غير موجود. تأكد من الرقم (مثل: ORD-001) أو اكتب رقم هاتفك للبحث عن طلباتك."
+            reply_en = "❌ Order ID not found. Please check it (e.g., ORD-001) or type your phone number to find your orders."
+            reply = reply_en if session.language == "en" else reply_ar
+
             session.add_turn("assistant", reply)
             return reply
 
@@ -333,6 +396,7 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
             # single match -> verify
             session.order_id = matches[0]
             order = orders.get(session.order_id, {})
+            session.verify_prompt_count = 0
             session.state = State.VERIFIED
             session.matched_orders = []
             session.order_data = {
@@ -356,6 +420,7 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
         # valid existing order id -> ask phone
         if user_text in orders:
             session.order_id = user_text
+            session.verify_prompt_count = 0   #Because the customer give the system order-id or phone number
             session.matched_orders = []
             session.state = State.AWAITING_PHONE
 
@@ -365,17 +430,43 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
 
             session.add_turn("assistant", reply)
             return reply
+        
+
+        # ✅ Stop looping: if user repeats complaint/escalation without providing ID/phone
+        if (is_escalation_request(user_text) or is_general_complaint(user_text)) and not looks_like_order_id(user_text) and not looks_like_phone(user_text):
+            session.verify_prompt_count += 1
+
+            if session.verify_prompt_count == 1:
+                reply_ar = (
+                   "أفهم إن التأخير مزعج 🙏\n"
+                    "عشان أقدر أربط الشكوى بطلبك بشكل صحيح، اكتب رقم الطلب (مثال: ORD-001) أو رقم هاتفك."
+                )
+                reply_en = (
+                    "I understand delays are frustrating 🙏\n"
+                    "To link the complaint to your order, please type your Order ID (e.g., ORD-001) or your phone number."
+                )
+            else:
+                reply_ar = (
+                    "أنا جاهز أرفع الشكوى فورًا، لكن لازم رقم الطلب أو رقم الهاتف حتى نكمل.\n"
+                    "اكتب واحد منهم من فضلك."
+                )
+                reply_en = (
+                    "I can file the complaint right away, but I need the Order ID or phone number to proceed.\n"
+                    "Please send one of them."
+                )
+
+            reply = reply_en if session.language == "en" else reply_ar
+            session.add_turn("assistant", reply)
+            return reply
 
 
-        # fallback
-        reply = generate_llm_reply(
-            llm, session.state,
-            {"verified": False, "knowledge": rag_context, "language": session.language},
-            user_text,
-            session.recent_history(10),
-        )
+        # fallback (NO LLM in verification stage)
+        reply_ar = "اكتب رقم الطلب بصيغة (ORD-001)  أو اكتب رقم هاتفك بصيغة صحيحة لو سمحت."
+        reply_en = "Please type your Order ID in this format (ORD-001) or type your phone number in correct format please."
+        reply = reply_en if session.language == "en" else reply_ar
         session.add_turn("assistant", reply)
         return reply
+
 
     # ========================================================
     # STATE: AWAITING PHONE
@@ -479,29 +570,54 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
 
 
         # Store last issue text (don't overwrite with yes/confirm)
-        if not is_yes(user_text):
+        if not is_yes(user_text) and not session.awaiting_complaint_confirmation:
             session.last_issue_text = user_text
 
         order_status = (session.order_data or {}).get("status", "")
 
-        # 0) General complaints (delay/service/driver) -> NO delivery / NO images
-        if is_general_complaint(user_text):
+        # 0) General complaints (delay/service/driver) -> NO delivery / NO images      
+        
+        if is_general_complaint(user_text) and not session.awaiting_complaint_confirmation:
+            session.last_issue_text = user_text
+            session.awaiting_complaint_confirmation = True
+
+            reply_ar = (
+                empathy_prefix("ar") +
+                "حبيت أوضح المشكلة 👍\n"
+                "هل حابب أسجل شكوى رسمية بخصوص التأخير؟\n"
+                "اكتب (نعم) للتأكيد أو اشرح أكثر إذا بتحب."
+            )
+            reply_en = (
+                empathy_prefix("en") +
+                "Thanks for explaining 👍\n"
+                "Would you like me to submit an official complaint about the delay?\n"
+                "Type (yes) to confirm or explain more."
+            )
+
+            reply = reply_en if session.language == "en" else reply_ar
+            session.add_turn("assistant", reply)
+            return reply
+        
+        if session.awaiting_complaint_confirmation and is_yes(user_text):
             rec = create_complaint_record(
-                order_id=session.order_data.get("order_id", "") if session.order_data else (session.order_id or ""),
-                customer_name=session.order_data.get("customer_name", "") if session.order_data else "",
-                phone=session.order_data.get("phone", "") if session.order_data else "",
-                message=session.last_issue_text or user_text,
+                order_id=session.order_data["order_id"],
+                customer_name=session.order_data["customer_name"],
+                phone=session.order_data["phone"],
+                message=session.last_issue_text,
                 image_paths=[],
                 category="service",
             )
-            session.pending_image_paths = []
+
+            session.awaiting_complaint_confirmation = False
             session.last_issue_text = None
 
-            reply = f"✅ تم تسجيل شكواك بنجاح.\nرقم الشكوى: {rec['complaint_id']}"
-            if session.language == "en":
-                reply = f"✅ Your complaint has been recorded.\nComplaint ID: {rec['complaint_id']}"
+            reply_ar = f"✅ تم تسجيل الشكوى.\nرقم الشكوى: {rec['complaint_id']}"
+            reply_en = f"✅ Your complaint has been recorded.\nComplaint ID: {rec['complaint_id']}"
+
+            reply = reply_en if session.language == "en" else reply_ar
             session.add_turn("assistant", reply)
             return reply
+
 
         # 1) Post-delivery complaints -> delivered + images
         if is_post_delivery_complaint(user_text):
@@ -511,7 +627,7 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
                     reply = "Damage/missing complaints can only be submitted after delivery."
                 session.add_turn("assistant", reply)
                 return reply
-
+            session.awaiting_images = True
             if not (session.pending_image_paths or []):
                 session.awaiting_images = True
                 reply = "تمام. أرفق صور المشكلة من خيار (Attach Images) ثم اكتب (تم/تأكيد) لإرسال الشكوى."
@@ -578,6 +694,10 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
 
             session.add_turn("assistant", reply)
             return reply
+        
+        # reset complaint confirmation if user changed intent
+        if session.awaiting_complaint_confirmation and not is_yes(user_text) and not is_general_complaint(user_text):
+            session.awaiting_complaint_confirmation = False
 
         # 2) Escalation/Manager -> record without images (verified only)
         if is_escalation_request(user_text) or (is_yes(user_text) and last_assistant_asked_escalation(session)):
@@ -597,6 +717,74 @@ def handle_customer_message(user_text: str, session: CustomerSession, llm) -> st
                 reply = f"✅ Your request has been recorded.\nComplaint ID: {rec['complaint_id']}"
             session.add_turn("assistant", reply)
             return reply
+        
+        # ✅ Hard guard: prevent LLM from claiming "recorded" for complaints/escalations
+        t = (user_text or "").lower()
+        if (
+            "شكوى" in t or "اشكي" in t or "ارفع" in t or
+            "complain" in t or "complaint" in t or
+            "manager" in t or "supervisor" in t or
+            "مسؤول" in t or "مدير" in t or "الإدارة" in t
+        ):
+            # لو كانت شكوى تأخير/خدمة -> تعامل معها محليًا (بدون LLM)
+            if is_general_complaint(user_text):
+                if not session.awaiting_complaint_confirmation:
+                    session.last_issue_text = user_text
+                    session.awaiting_complaint_confirmation = True
+
+                    reply_ar = (
+                        empathy_prefix("ar") +
+                        "وصلتني تفاصيل المشكلة 👍\n"
+                        "هل تحب أسجل شكوى رسمية بخصوص التأخير؟\n"
+                        "اكتب (نعم) للتأكيد."
+                    )
+                    reply_en = (
+                        empathy_prefix("en") +
+                        "Thanks for explaining 👍\n"
+                        "Would you like me to submit an official complaint about the delay?\n"
+                        "Type (yes) to confirm."
+                    )
+                    reply = reply_en if session.language == "en" else reply_ar
+                    session.add_turn("assistant", reply)
+                    return reply
+
+                # لو منتظر تأكيد وجاء Yes
+                if session.awaiting_complaint_confirmation and is_yes(user_text):
+                    rec = create_complaint_record(
+                        order_id=session.order_data.get("order_id", "") if session.order_data else (session.order_id or ""),
+                        customer_name=session.order_data.get("customer_name", "") if session.order_data else "",
+                        phone=session.order_data.get("phone", "") if session.order_data else "",
+                        message=session.last_issue_text or user_text,
+                        image_paths=[],
+                        category="service",
+                    )
+                    session.awaiting_complaint_confirmation = False
+                    session.last_issue_text = None
+
+                    reply_ar = f"✅ تم تسجيل الشكوى.\nرقم الشكوى: {rec['complaint_id']}"
+                    reply_en = f"✅ Your complaint has been recorded.\nComplaint ID: {rec['complaint_id']}"
+                    reply = reply_en if session.language == "en" else reply_ar
+                    session.add_turn("assistant", reply)
+                    return reply
+
+             # لو طلب مسؤول/تصعيد (بدون ما نسجل قبل ما نوصل create_complaint_record)
+            if is_escalation_request(user_text) or (is_yes(user_text) and last_assistant_asked_escalation(session)):
+                rec = create_complaint_record(
+                    order_id=session.order_data.get("order_id", "") if session.order_data else (session.order_id or ""),
+                    customer_name=session.order_data.get("customer_name", "") if session.order_data else "",
+                    phone=session.order_data.get("phone", "") if session.order_data else "",
+                    message=session.last_issue_text or user_text,
+                    image_paths=[],
+                    category="escalation",
+                )
+                session.pending_image_paths = []
+                session.last_issue_text = None
+
+                reply_ar = f"✅ تم تسجيل طلبك.\nرقم الشكوى: {rec['complaint_id']}"
+                reply_en = f"✅ Your request has been recorded.\nComplaint ID: {rec['complaint_id']}"
+                reply = reply_en if session.language == "en" else reply_ar
+                session.add_turn("assistant", reply)
+                return reply
 
         # 3) Otherwise -> normal LLM
         reply = generate_llm_reply(
@@ -629,7 +817,7 @@ You are an AI Customer Support Assistant for an e-commerce platform.
 =====================
 CRITICAL RULES
 =====================
-
+ 
 
 LANGUAGE POLICY (LOCKED):
 - You are ONLY allowed to respond in Arabic or English.
@@ -647,6 +835,10 @@ DATA & PRIVACY:
 - You must NOT invent any order, phone number, customer, or policy information.
 - You must rely ONLY on the CONTEXT provided by the system.
 - You must NOT reveal any order information unless verification is complete.
+
+POLICY DISCLOSURE RULE:
+- Do NOT provide a list of all policies.
+- Only answer a specific policy question that the user asked (delivery/returns/refunds/etc). If the user asks "what policies do you have?", ask them which policy they mean.
 
 RAG ENFORCEMENT:
 - If the requested information is NOT explicitly present in the KNOWLEDGE section:

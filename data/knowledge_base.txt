@@ -193,3 +193,82 @@ Personal data is protected and never shared without verification.
 يحتفظ النظام بحق رفض الإرجاع في حال إساءة الاستخدام أو مخالفة السياسات.
 
 يتم حماية بيانات العملاء وعدم مشاركتها بدون تحقق.
+
+
+💳 PAYMENT POLICY (ADDITIONAL)
+
+=====================
+
+Payment Methods Availability
+
+The platform supports multiple payment methods depending on system configuration and availability, including:
+
+Cash on Delivery
+
+Credit / Debit Card
+
+Online Payment Gateways
+
+Wallet / Balance (if enabled)
+
+Not all payment methods may be available for every order, location, or time.
+
+توفّر وسائل الدفع:
+
+يدعم النظام عدة طرق للدفع حسب الإعدادات والتوفر، وتشمل:
+
+الدفع عند الاستلام
+
+البطاقات البنكية (مدين / ائتمان)
+
+بوابات الدفع الإلكتروني
+
+المحفظة / الرصيد (إن كانت مفعّلة)
+
+قد لا تكون جميع وسائل الدفع متاحة لكل طلب أو موقع أو وقت.
+
+Payment Finality & Changes
+
+Once an order is confirmed, the selected payment method cannot be changed.
+
+Orders paid online or by card must be successfully authorized before processing.
+
+بعد تأكيد الطلب، لا يمكن تغيير وسيلة الدفع المختارة.
+
+الطلبات المدفوعة إلكترونيًا أو بالبطاقة يجب أن يتم اعتماد الدفع بنجاح قبل تنفيذ الطلب.
+
+Payment Verification & Security
+
+Payment verification is handled automatically by secure payment providers.
+
+The system does not store sensitive payment details such as card numbers or CVV codes.
+
+يتم التحقق من عمليات الدفع تلقائيًا عبر مزودي دفع آمنين.
+
+لا يقوم النظام بتخزين أي بيانات دفع حساسة مثل أرقام البطاقات أو رموز الأمان.
+
+Refund Method Alignment
+
+Approved refunds are processed using the same payment method originally used for the order whenever possible.
+
+Refund processing time may vary depending on the payment provider.
+
+يتم استرداد المبالغ الموافق عليها بنفس وسيلة الدفع المستخدمة في الطلب قدر الإمكان.
+
+قد تختلف مدة معالجة الاسترداد حسب مزود خدمة الدفع.
+
+Payment Disputes & Misuse
+
+Any misuse of payment methods, fraudulent activity, or unauthorized chargebacks may result in order cancellation or account restriction.
+
+The platform reserves the right to investigate and take appropriate action.
+
+أي إساءة استخدام لوسائل الدفع أو نشاط احتيالي أو اعتراضات غير مصرح بها قد تؤدي إلى إلغاء الطلب أو تقييد الحساب.
+
+يحتفظ النظام بحق التحقيق واتخاذ الإجراء المناسب.
+
+Payment Disclaimer
+
+The platform reserves the right to update, limit, or disable payment methods at any time without prior notice.
+
+يحتفظ النظام بحق تحديث أو تقييد أو إيقاف وسائل الدفع في أي وقت دون إشعار مسبق.

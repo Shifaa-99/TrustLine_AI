@@ -1,21 +1,27 @@
 import os
 import uuid
 from pathlib import Path
-
+import re
 import streamlit as st
 import customer_flow, config, complaint_manager
-
 from openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-
 from auth import init_auth_state, login_ui_inline, logout
 from ui import app_header
 from customer_flow import CustomerSession, handle_customer_message
 from config import COMPLAINT_IMAGES_DIR
 
-import re
 
+
+# =========================
+# Page Config
+# =========================
+st.set_page_config(
+    page_title="TrustLine AI • Customer Support",
+    page_icon="💬",
+    layout="wide"
+)
 
 # =========================
 # Language helper (ONLY for uploader text)
@@ -54,14 +60,6 @@ st.sidebar.caption(f"The System will be Coming Soon")
 st.sidebar.caption(f"ان شاء الله ❤️❤️❤️")
 st.sidebar.caption(f"thank U")
 
-# =========================
-# Page Config
-# =========================
-st.set_page_config(
-    page_title="TrustLine AI • Customer Support",
-    page_icon="💬",
-    layout="wide"
-)
 
 init_auth_state()
 

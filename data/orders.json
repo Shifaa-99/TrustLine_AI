@@ -20,16 +20,12 @@
   "ORD-002": {
     "customer_name": "Rahaf Kanaan",
     "phone": "0797273229",
-    "delivery_address": "دوار سال الصغير",
-    "items": [
-      {
-        "product": "تلفون",
-        "qty": 1
-      }
-    ],
-    "status": "received",
+    "delivery_address": "دوار سال الصغير- اربد",
+    "items": [],
+    "status": "preparing",
     "created_at": "2026-02-01T16:48:59",
-    "last_updated": "2026-02-01T16:49:47"
+    "last_updated": "2026-02-10T19:46:40",
+    "payment_method": "cash"
   },
   "ORD-003": {
     "customer_name": "شفاء",
@@ -37,13 +33,16 @@
     "delivery_address": "اربد",
     "items": [
       {
-        "product": "لابتوب",
-        "qty": 1
+        "name": "clothes",
+        "quantity": 5,
+        "unit_price": 20.0,
+        "note": ""
       }
     ],
-    "status": "out_for_delivery",
+    "status": "preparing",
     "created_at": "2026-02-01T16:58:19",
-    "last_updated": "2026-02-01T16:59:51"
+    "last_updated": "2026-02-10T19:47:54",
+    "payment_method": "cash"
   },
   "ORD-004": {
     "customer_name": "Ali",
@@ -104,5 +103,28 @@
     "status": "preparing",
     "created_at": "2026-02-06T22:42:33",
     "last_updated": "2026-02-06T22:43:19"
+  },
+  "ORD-011": {
+    "customer_name": "Samah",
+    "phone": "0799173817",
+    "delivery_address": "Madaba-Jordan",
+    "items": [
+      {
+        "name": "Sandals",
+        "quantity": 10,
+        "unit_price": 20.0,
+        "note": ""
+      },
+      {
+        "name": "Bags",
+        "quantity": 5,
+        "unit_price": 15.0,
+        "note": "USB-C"
+      }
+    ],
+    "payment_method": "wallet",
+    "status": "preparing",
+    "created_at": "2026-02-10T19:17:38",
+    "last_updated": "2026-02-10T19:46:03"
   }
 }
